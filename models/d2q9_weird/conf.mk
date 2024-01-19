@@ -1,0 +1,3 @@
+ADJOINT=0
+TEST=TRUE
+OPT="bc*autosym"
