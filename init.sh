@@ -5,6 +5,8 @@ set -e
 GIT_TCLB=.tclb/git_tclb
 GIT_OVER=.tclb/git_over
 
+EXC_FILES="README.md"
+
 if ! test -z "$1"; then
     REMOTE="$1"
     shift
@@ -13,6 +15,11 @@ fi
 BRANCH=master
 
 function finish {
+    for i in $EXC_SAVED; do
+        if test -f "$EXC_TMP_DIR/$i"; then
+            mv "$EXC_TMP_DIR/$i" "$i"
+        fi
+    done
     if test -d "$GIT_OVER"; then
         if test -d ".git"; then
         mv .git check_me_git
@@ -72,10 +79,23 @@ if test -z "$URL_TCLB"; then
     REMOTE="${REMOTE}CFD-GO/TCLB.git"
     URL_TCLB="$REMOTE"
     gittclb remote add origin $URL_TCLB
-    gittclb update-index --assume-unchanged README.md
+    EXC_TMP_DIR=.tclb/tmp
+    EXC_SAVED=""
+    for i in $EXC_FILES; do
+        if test -f "$i"; then
+            mkdir -p "$EXC_TMP_DIR"
+            mv "$i" "$EXC_TMP_DIR"
+            EXC_SAVED="$EXC_SAVED $i"
+        fi
+    done
     gittclb pull origin master
+    for i in $EXC_FILES; do
+        gittclb update-index --assume-unchanged "$i"
+    done
 fi
 
 echo "remotes:"
 echo " - $URL_OVER"
 echo " - $URL_TCLB"
+
+gitover config --local include.path '../.tclb/gitconfig'
