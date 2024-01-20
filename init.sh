@@ -89,13 +89,15 @@ if test -z "$URL_TCLB"; then
         fi
     done
     gittclb pull origin master
-    for i in $EXC_FILES; do
-        gittclb update-index --assume-unchanged "$i"
-    done
 fi
 
 echo "remotes:"
 echo " - $URL_OVER"
 echo " - $URL_TCLB"
 
+for i in $EXC_FILES; do
+    gittclb update-index --assume-unchanged "$i"
+done
 gitover config --local include.path '../.tclb/gitconfig'
+
+
