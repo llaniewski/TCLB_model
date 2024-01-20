@@ -37,8 +37,12 @@ if git tag > /dev/null 2>&1; then
     fi
 fi
 
+function git_init {
+    git -c init.defaultBranch=master init
+}
+
 if ! test -d "$GIT_OVER"; then
-    git init
+    git_init
     mv .git "$GIT_OVER"
 fi
 trap finish EXIT
@@ -47,7 +51,7 @@ function gitover {
 }
 
 if ! test -d "$GIT_TCLB"; then
-    git init
+    git_init
     mv .git "$GIT_TCLB"
 fi
 function gittclb {
@@ -68,7 +72,8 @@ if test -z "$URL_TCLB"; then
     REMOTE="${REMOTE}CFD-GO/TCLB.git"
     URL_TCLB="$REMOTE"
     gittclb remote add origin $URL_TCLB
-    git pull origin master
+    gittclb update-index --assume-unchanged README.md
+    gittclb pull origin master
 fi
 
 echo "remotes:"
