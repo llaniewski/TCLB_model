@@ -99,5 +99,8 @@ for i in $EXC_FILES; do
     gittclb update-index --assume-unchanged "$i"
 done
 gitover config --local include.path '../.tclb/gitconfig'
+GITIGN_OVER=".tclb/gitignore_gen"
 
+cat .gitignore .tclb/gitignore >$GITIGN_OVER
+comm <(gitover ls-files | sort) <(gittclb ls-files | sort) -13 | sed 's|^|/|' >>$GITIGN_OVER
 

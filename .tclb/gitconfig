@@ -1,4 +1,4 @@
 [core]
-	excludesfile = .tclb/gitignore
+	excludesfile = .tclb/gitignore_gen
 [alias]
 	tclb = !git --git-dir=\".tclb/git_tclb\"
