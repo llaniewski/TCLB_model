@@ -8,12 +8,25 @@ GITIGN_OVER=".overlay.gitignore"
 GITIGN_COMB=".tclb/gitignore"
 EXC_FILES="README.md"
 
-if ! test -z "$1"; then
-    REMOTE="$1"
-    shift
-fi
-
 BRANCH=master
+UPDATE_SUBM=false
+
+while test -n "$1"; do
+	case "$1" in
+	--submodules)
+        UPDATE_SUBM=true
+        ;;
+	-o|--overlay-remote)
+        shift
+        WANT_URL_OVER="$1"
+        ;;
+	-t|--tclb-remote)
+        shift
+        WANT_URL_TCLB="$1"
+        ;;
+    esac
+    shift
+done
 
 mkdir -p .tclb
 
@@ -115,3 +128,9 @@ comm <(gitover ls-files | sort) <(gittclb ls-files | sort) -13 | sed 's|^|/|' >>
 
 gitover config --local core.excludesfile "$GITIGN_COMB"
 gitover config --local alias.tclb "!git --git-dir=\"$GIT_TCLB\""
+
+if $UPDATE_SUBM; then
+    echo "Updating submodules"
+    gittclb submodule init
+    gittclb submodule update
+fi
