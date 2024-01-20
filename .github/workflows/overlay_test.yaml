@@ -1,0 +1,44 @@
+name: CPU
+
+on: [ push, pull_request ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        model: 
+          - d2q9_weird
+    steps:
+    - name: Git checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+    - name: Init overlay
+      shell: bash
+      run: ./init.sh
+    - name: Install dependencies
+      uses: CFD-GO/TCLB/.github/actions/install
+      with:
+        r: true
+        rdep: true
+        openmpi: true
+        python-dev: true
+        rinside: true
+        lcov: true
+    - name: Configure
+      uses: CFD-GO/TCLB/.github/actions/configure
+      with:
+        gpu: false
+        python: true
+        paranoid: true
+        coverage: true
+    - name: Compile
+      uses: CFD-GO/TCLB/.github/actions/compile
+      with:
+        model: ${{ matrix.model }}
+    - name: Run tests
+      uses: CFD-GO/TCLB/.github/actions/test
+      with:
+        model: ${{ matrix.model }}
