@@ -19,7 +19,7 @@ jobs:
       shell: bash
       run: ./init.sh
     - name: Install dependencies
-      uses: CFD-GO/TCLB/.github/actions/install
+      uses: CFD-GO/TCLB/.github/actions/install@master
       with:
         r: true
         rdep: true
@@ -28,17 +28,17 @@ jobs:
         rinside: true
         lcov: true
     - name: Configure
-      uses: CFD-GO/TCLB/.github/actions/configure
+      uses: CFD-GO/TCLB/.github/actions/configure@master
       with:
         gpu: false
         python: true
         paranoid: true
         coverage: true
     - name: Compile
-      uses: CFD-GO/TCLB/.github/actions/compile
+      uses: CFD-GO/TCLB/.github/actions/compile@master
       with:
         model: ${{ matrix.model }}
     - name: Run tests
-      uses: CFD-GO/TCLB/.github/actions/test
+      uses: CFD-GO/TCLB/.github/actions/test@master
       with:
         model: ${{ matrix.model }}
