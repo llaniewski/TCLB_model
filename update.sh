@@ -44,6 +44,14 @@ function git_init {
     git -c init.defaultBranch=master init
 }
 
+function current_branch {
+    $1 branch --show-current 2>/dev/null || true
+}
+
+function default_branch {
+    $1 rev-parse --abbrev-ref origin/HEAD 2>/dev/null | sed -n -E 's%^origin/(HEAD|)%%p'
+}
+
 GIT_TCLB=.tclb/git_tclb
 GIT_OVER=.tclb/git_over
 GITIGN_OVER=".overlay.gitignore"
@@ -85,12 +93,6 @@ done
 
 if test -f "$CONF_FILE"; then
     source "$CONF_FILE"
-fi
-if test -z "$TCLB_FORK"; then
-    TCLB_FORK="CFD-GO/TCLB"
-fi
-if test -z "$TCLB_BRANCH"; then
-    TCLB_BRANCH="master"
 fi
 
 mkdir -p .tclb
@@ -141,21 +143,26 @@ if test -z "$URL_OVER"; then
 else
     check_match "overlay" "remote" "$URL_OVER" "$WANT_URL_OVER"
 fi
+
 if test -n "$URL_OVER"; then
     echo "Fetching overlay origin: $URL_OVER"
     gitover fetch origin
+    gitover remote set-head origin -a || true
 else
     PRINT_HOW_TO=true
     echo "No origin in overlay"
 fi
 
-BRANCH_OVER="$(gitover branch --show-current 2>/dev/null || true)"
+BRANCH_OVER="$(current_branch gitover)"
 
-if test -z "$BRANCH_OVER"; then
+if test -z "$(gitover branch 2>/dev/null)"; then
     if test -n "$WANT_BRANCH_OVER"; then
         BRANCH_OVER="$WANT_BRANCH_OVER"
     else
-        BRANCH_OVER="master"
+        BRANCH_OVER="$(default_branch gitover)"
+        if test -z "$BRANCH_OVER"; then
+            BRANCH_OVER="master"
+        fi
     fi
     WANT_PULL_OVER=true
 else
@@ -179,6 +186,9 @@ if test -z "$URL_TCLB"; then
     if ! test -z "$WANT_URL_TCLB"; then
         TCLB_OVER="$WANT_URL_TCLB"
     else
+        if test -z "$TCLB_FORK"; then
+            TCLB_FORK="CFD-GO/TCLB"
+        fi
         case "$URL_OVER" in
         git@github.com*)
             URL_TCLB="git@github.com:${TCLB_FORK}.git"
@@ -193,16 +203,25 @@ if test -z "$URL_TCLB"; then
 else
     check_match "tclb" "remote" "$URL_TCLB" "$WANT_URL_TCLB"
 fi
+
 echo "Fetching tclb origin: $URL_TCLB"
 gittclb fetch origin
+gittclb remote set-head origin -a || true
 
-BRANCH_TCLB="$(gittclb branch --show-current 2>/dev/null || true)"
+BRANCH_TCLB="$(current_branch gittclb)"
 
-if test -z "$BRANCH_TCLB"; then
+if test -z "$(gittclb branch 2>/dev/null)"; then
     if test -n "$WANT_BRANCH_TCLB"; then
         BRANCH_TCLB="$WANT_BRANCH_TCLB"
     else
-        BRANCH_TCLB="$TCLB_BRANCH"
+        if test -z "$TCLB_BRANCH"; then
+            BRANCH_TCLB="$(default_branch gittclb)"
+        else
+            BRANCH_TCLB="$TCLB_BRANCH"
+        fi
+        if test -z "$BRANCH_TCLB"; then
+            BRANCH_TCLB="master"
+        fi
     fi
     WANT_PULL_TCLB=true
 else
@@ -282,18 +301,17 @@ if test $(parse_url "$URL_TCLB" "4") == "github.com"; then
     echo "# saved from the checked out TCLB repo:" >$TMP_CONF
     echo "TCLB_FORK='$TCLB_FORK'" >>$TMP_CONF
     echo "TCLB_BRANCH='$TCLB_BRANCH'" >>$TMP_CONF
-    if test -f "$CONF_FILE" && diff "$CONF_FILE" "$TMP_CONF"; then
+    if test -f "$CONF_FILE" && diff "$CONF_FILE" "$TMP_CONF" >/dev/null 2>&1; then
         rm "$TMP_CONF"
     else
         if $SAVE_DEFAULTS; then
             mv "$TMP_CONF" "$CONF_FILE"
             echo ""
             echo "Saved defaults to $CONF_FILE:"
-            cat "$CONF_FILE"
             echo "You can commit them to the repository by:"
             echo "  > git add $CONF_FILE"
             echo "  > git commit"
-        elif ! test -f "$CONF_FILE" && test "$TCLB_FORK @ $TCLB_BRANCH" != "CFD-GO @ master"; then
+        elif ! test -f "$CONF_FILE" && test "$TCLB_FORK @ $TCLB_BRANCH" != "CFD-GO/TCLB @ master"; then
             echo ""
             echo "You can save this fork ($TCLB_FORK),"
             echo "  and branch ($TCLB_BRANCH) as default,"
