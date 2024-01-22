@@ -22,7 +22,7 @@ function check_match {
         echo "$1 $2 is different than the one specified:" >&2
         echo " - $2 in the git repo: $3" >&2
         echo " - $2 wanted: $4" >&2
-        exit 1;
+        exit 1
     fi
 }
 
@@ -34,7 +34,7 @@ function finish {
     done
     if test -d "$GIT_OVER"; then
         if test -d ".git"; then
-        mv .git check_me_git
+            mv .git check_me_git
         fi
         mv $GIT_OVER .git
     fi
@@ -55,23 +55,23 @@ EXC_TMP_DIR=.tclb/tmp
 WANT_PULL_TCLB=false
 WANT_PULL_OVER=false
 while test -n "$1"; do
-	case "$1" in
-	--submodules)
+    case "$1" in
+    --submodules)
         UPDATE_SUBM=true
         ;;
-	-o|--over|--overlay|--overlay-remote)
+    -o | --over | --overlay | --overlay-remote)
         shift
         check_url "overlay" "$1"
         WANT_BRANCH_OVER="$(parse_url "$1" "7")"
         WANT_URL_OVER="$(parse_url "$1" "1")"
         ;;
-	-t|--tclb|--tclb-remote)
+    -t | --tclb | --tclb-remote)
         shift
         check_url "tclb" "$1"
         WANT_BRANCH_TCLB="$(parse_url "$1" "7")"
         WANT_URL_TCLB="$(parse_url "$1" "1")"
         ;;
-    -p|--pull-tclb)
+    -p | --pull-tclb)
         WANT_PULL_TCLB=true
         ;;
     esac
@@ -81,22 +81,21 @@ done
 mkdir -p .tclb
 mkdir -p "$EXC_TMP_DIR"
 
-if git tag > /dev/null 2>&1; then
+if git tag >/dev/null 2>&1; then
     if git ls-files | grep src/main.cpp; then
         if test -d "$GIT_TCLB"; then
             echo "$GIT_TCLB: already exists"
-            exit 1;
+            exit 1
         fi
         mv .git $GIT_TCLB
-    else       
+    else
         if test -d "$GIT_OVER"; then
             echo "$GIT_OVER: already exists"
-            exit 1;
+            exit 1
         fi
         mv .git $GIT_OVER && trap finish EXIT
     fi
 fi
-
 
 if ! test -d "$GIT_OVER"; then
     git_init
@@ -154,7 +153,7 @@ if $WANT_PULL_OVER; then
     done
     gitover pull origin $BRANCH_OVER || true
     for i in $EXC_FILES; do
-        test -f "$i" || mv "$EXC_TMP_DIR/$i" "$i" 
+        test -f "$i" || mv "$EXC_TMP_DIR/$i" "$i"
     done
 fi
 
