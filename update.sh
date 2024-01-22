@@ -2,15 +2,6 @@
 
 set -e
 
-GIT_TCLB=.tclb/git_tclb
-GIT_OVER=.tclb/git_over
-GITIGN_OVER=".overlay.gitignore"
-GITIGN_COMB=".tclb/gitignore"
-EXC_FILES="README.md"
-UPDATE_SUBM=false
-PRINT_HOW_TO=false
-EXC_TMP_DIR=.tclb/tmp
-
 function parse_url {
     echo ${1} | sed -n -E "s%^(([^:/@.]*://|)([^@/]+@|)([^:/@]+)[:/]([^:/@.][^:@]*)|)(@([^:@.]*)|)\$%\\${2}%p"
 }
@@ -35,6 +26,32 @@ function check_match {
     fi
 }
 
+function finish {
+    for i in $EXC_SAVED; do
+        if test -f "$EXC_TMP_DIR/$i"; then
+            mv "$EXC_TMP_DIR/$i" "$i"
+        fi
+    done
+    if test -d "$GIT_OVER"; then
+        if test -d ".git"; then
+        mv .git check_me_git
+        fi
+        mv $GIT_OVER .git
+    fi
+}
+
+function git_init {
+    git -c init.defaultBranch=master init
+}
+
+GIT_TCLB=.tclb/git_tclb
+GIT_OVER=.tclb/git_over
+GITIGN_OVER=".overlay.gitignore"
+GITIGN_COMB=".tclb/gitignore"
+EXC_FILES="README.md"
+UPDATE_SUBM=false
+PRINT_HOW_TO=false
+EXC_TMP_DIR=.tclb/tmp
 WANT_PULL_TCLB=false
 WANT_PULL_OVER=false
 while test -n "$1"; do
@@ -64,20 +81,6 @@ done
 mkdir -p .tclb
 mkdir -p "$EXC_TMP_DIR"
 
-function finish {
-    for i in $EXC_SAVED; do
-        if test -f "$EXC_TMP_DIR/$i"; then
-            mv "$EXC_TMP_DIR/$i" "$i"
-        fi
-    done
-    if test -d "$GIT_OVER"; then
-        if test -d ".git"; then
-        mv .git check_me_git
-        fi
-        mv $GIT_OVER .git
-    fi
-}
-
 if git tag > /dev/null 2>&1; then
     if git ls-files | grep src/main.cpp; then
         if test -d "$GIT_TCLB"; then
@@ -94,9 +97,6 @@ if git tag > /dev/null 2>&1; then
     fi
 fi
 
-function git_init {
-    git -c init.defaultBranch=master init
-}
 
 if ! test -d "$GIT_OVER"; then
     git_init
