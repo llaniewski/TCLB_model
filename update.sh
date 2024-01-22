@@ -54,6 +54,8 @@ PRINT_HOW_TO=false
 EXC_TMP_DIR=.tclb/tmp
 WANT_PULL_TCLB=false
 WANT_PULL_OVER=false
+SAVE_DEFAULTS=false
+CONF_FILE=".overlay.config"
 while test -n "$1"; do
     case "$1" in
     --submodules)
@@ -74,9 +76,22 @@ while test -n "$1"; do
     -p | --pull-tclb)
         WANT_PULL_TCLB=true
         ;;
+    -s | --save | --save-defaults)
+        SAVE_DEFAULTS=true
+        ;;
     esac
     shift
 done
+
+if test -f "$CONF_FILE"; then
+    source "$CONF_FILE"
+fi
+if test -z "$TCLB_FORK"; then
+    TCLB_FORK="CFD-GO/TCLB"
+fi
+if test -z "$TCLB_BRANCH"; then
+    TCLB_BRANCH="master"
+fi
 
 mkdir -p .tclb
 mkdir -p "$EXC_TMP_DIR"
@@ -88,6 +103,7 @@ if git tag >/dev/null 2>&1; then
             exit 1
         fi
         mv .git $GIT_TCLB
+        SAVE_DEFAULTS=true
     else
         if test -d "$GIT_OVER"; then
             echo "$GIT_OVER: already exists"
@@ -165,10 +181,10 @@ if test -z "$URL_TCLB"; then
     else
         case "$URL_OVER" in
         git@github.com*)
-            URL_TCLB="git@github.com:CFD-GO/TCLB.git"
+            URL_TCLB="git@github.com:${TCLB_FORK}.git"
             ;;
         *)
-            URL_TCLB="https://github.com/CFD-GO/TCLB.git"
+            URL_TCLB="https://github.com/${TCLB_FORK}.git"
             ;;
         esac
     fi
@@ -186,7 +202,7 @@ if test -z "$BRANCH_TCLB"; then
     if test -n "$WANT_BRANCH_TCLB"; then
         BRANCH_TCLB="$WANT_BRANCH_TCLB"
     else
-        BRANCH_TCLB="master"
+        BRANCH_TCLB="$TCLB_BRANCH"
     fi
     WANT_PULL_TCLB=true
 else
@@ -258,3 +274,33 @@ if $PRINT_HOW_TO; then
     echo "   or"
     echo "  > $0 --overlay git@github.com/user/repo.git"
 fi
+
+if test $(parse_url "$URL_TCLB" "4") == "github.com"; then
+    TCLB_FORK="$(parse_url "$URL_TCLB" "5" | sed 's/.git$//')"
+    TCLB_BRANCH="$BRANCH_TCLB"
+    TMP_CONF="$EXC_TMP_DIR/$CONF_FILE"
+    echo "# saved from the checked out TCLB repo:" >$TMP_CONF
+    echo "TCLB_FORK='$TCLB_FORK'" >>$TMP_CONF
+    echo "TCLB_BRANCH='$TCLB_BRANCH'" >>$TMP_CONF
+    if test -f "$CONF_FILE" && diff "$CONF_FILE" "$TMP_CONF"; then
+        rm "$TMP_CONF"
+    else
+        if $SAVE_DEFAULTS; then
+            mv "$TMP_CONF" "$CONF_FILE"
+            echo ""
+            echo "Saved defaults to $CONF_FILE:"
+            cat "$CONF_FILE"
+            echo "You can commit them to the repository by:"
+            echo "  > git add $CONF_FILE"
+            echo "  > git commit"
+        elif ! test -f "$CONF_FILE" && test "$TCLB_FORK @ $TCLB_BRANCH" != "CFD-GO @ master"; then
+            echo ""
+            echo "You can save this fork ($TCLB_FORK),"
+            echo "  and branch ($TCLB_BRANCH) as default,"
+            echo "  by using the '--save' option."
+        fi
+    fi
+fi
+
+
+
