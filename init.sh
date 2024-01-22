@@ -8,6 +8,8 @@ GITIGN_OVER=".overlay.gitignore"
 GITIGN_COMB=".tclb/gitignore"
 EXC_FILES="README.md"
 UPDATE_SUBM=false
+PRINT_HOW_TO=false
+EXC_TMP_DIR=.tclb/tmp
 
 function parse_url {
     echo ${1} | sed -n -E "s%^(([^:/@.]*://|)([^@/]+@|)([^:/@]+)[:/]([^:/@.][^:@]*)|)(@([^:@.]*)|)\$%\\${2}%p"
@@ -60,6 +62,7 @@ while test -n "$1"; do
 done
 
 mkdir -p .tclb
+mkdir -p "$EXC_TMP_DIR"
 
 function finish {
     for i in $EXC_SAVED; do
@@ -123,8 +126,13 @@ if test -z "$URL_OVER"; then
 else
     check_match "overlay" "remote" "$URL_OVER" "$WANT_URL_OVER"
 fi
-echo "Fetching overlay origin: $URL_OVER"
-gitover fetch origin
+if test -n "$URL_OVER"; then
+    echo "Fetching overlay origin: $URL_OVER"
+    gitover fetch origin
+else
+    PRINT_HOW_TO=true
+    echo "No origin in overlay"
+fi
 
 BRANCH_OVER="$(gitover branch --show-current 2>/dev/null || true)"
 
@@ -141,18 +149,14 @@ fi
 
 if $WANT_PULL_OVER; then
     echo "Pulling overlay branch: $BRANCH_OVER"
+    for i in $EXC_FILES; do
+        test -f "$i" && mv "$i" "$EXC_TMP_DIR"
+    done
     gitover pull origin $BRANCH_OVER || true
+    for i in $EXC_FILES; do
+        test -f "$i" || mv "$EXC_TMP_DIR/$i" "$i" 
+    done
 fi
-
-EXC_TMP_DIR=.tclb/tmp
-EXC_SAVED=""
-for i in $EXC_FILES; do
-    if test -f "$i"; then
-        mkdir -p "$EXC_TMP_DIR"
-        mv "$i" "$EXC_TMP_DIR"
-        EXC_SAVED="$EXC_SAVED $i"
-    fi
-done
 
 URL_TCLB="$(gittclb remote get-url origin 2>/dev/null || true)"
 
@@ -192,9 +196,16 @@ fi
 
 if $WANT_PULL_TCLB; then
     echo "Pulling tclb branch: $BRANCH_TCLB"
+    EXC_SAVED=""
+    for i in $EXC_FILES; do
+        if test -f "$i"; then
+            mkdir -p "$EXC_TMP_DIR"
+            mv "$i" "$EXC_TMP_DIR"
+            EXC_SAVED="$EXC_SAVED $i"
+        fi
+    done
     gittclb pull origin $BRANCH_TCLB
 fi
-
 echo "repos:"
 echo "  tclb:"
 echo "    remote: $URL_TCLB"
@@ -225,4 +236,20 @@ if $UPDATE_SUBM; then
     echo "Updating submodules"
     gittclb submodule init
     gittclb submodule update
+fi
+
+echo ""
+echo "--------------- Overlay ready ---------------"
+echo ""
+echo "To make git operations on the overlay repo,"
+echo "  use the standard 'git ...' command."
+echo "To make git operations on the TCLB repo,"
+echo "  use the 'git tclb ...'."
+if $PRINT_HOW_TO; then
+    echo ""
+    echo "You can add the url to the overlay repository by:"
+    echo "  > git remote add origin git@github.com/user/repo.git"
+    echo "  > git pull origin $BRANCH_OVER"
+    echo "   or"
+    echo "  > $0 --overlay git@github.com/user/repo.git"
 fi
