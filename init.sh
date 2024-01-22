@@ -7,8 +7,6 @@ GIT_OVER=.tclb/git_over
 GITIGN_OVER=".overlay.gitignore"
 GITIGN_COMB=".tclb/gitignore"
 EXC_FILES="README.md"
-
-BRANCH=master
 UPDATE_SUBM=false
 
 function parse_url {
@@ -55,9 +53,6 @@ while test -n "$1"; do
     esac
     shift
 done
-
-echo "wanted: $WANT_URL_OVER @ $WANT_BRANCH_OVER"
-echo "wanted: $WANT_URL_TCLB @ $WANT_BRANCH_TCLB"
 
 mkdir -p .tclb
 
@@ -122,6 +117,7 @@ if test -z "$URL_OVER"; then
 else
     check_match "overlay" "remote" "$URL_OVER" "$WANT_URL_OVER"
 fi
+echo "Fetching: $URL_OVER"
 gitover fetch origin
 
 BRANCH_OVER="$(gitover branch --show-current 2>/dev/null || true)"
@@ -166,7 +162,8 @@ if test -z "$URL_TCLB"; then
 else
     check_match "tclb" "remote" "$URL_TCLB" "$WANT_URL_TCLB"
 fi
-gitover fetch origin
+echo "Fetching: $URL_TCLB"
+gittclb fetch origin
 
 BRANCH_TCLB="$(gittclb branch --show-current 2>/dev/null || true)"
 
