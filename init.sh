@@ -33,6 +33,8 @@ function check_match {
     fi
 }
 
+WANT_PULL_TCLB=false
+WANT_PULL_OVER=false
 while test -n "$1"; do
 	case "$1" in
 	--submodules)
@@ -49,6 +51,9 @@ while test -n "$1"; do
         check_url "tclb" "$1"
         WANT_BRANCH_TCLB="$(parse_url "$1" "7")"
         WANT_URL_TCLB="$(parse_url "$1" "1")"
+        ;;
+    -p|--pull-tclb)
+        WANT_PULL_TCLB=true
         ;;
     esac
     shift
@@ -113,11 +118,12 @@ if test -z "$URL_OVER"; then
     if test -n "$WANT_URL_OVER"; then
         URL_OVER="$WANT_URL_OVER"
         gitover remote add origin $URL_OVER
+        WANT_PULL_OVER=true
     fi
 else
     check_match "overlay" "remote" "$URL_OVER" "$WANT_URL_OVER"
 fi
-echo "Fetching: $URL_OVER"
+echo "Fetching overlay origin: $URL_OVER"
 gitover fetch origin
 
 BRANCH_OVER="$(gitover branch --show-current 2>/dev/null || true)"
@@ -128,9 +134,14 @@ if test -z "$BRANCH_OVER"; then
     else
         BRANCH_OVER="master"
     fi
-    gitover pull origin $BRANCH_OVER || true
+    WANT_PULL_OVER=true
 else
     check_match "overlay" "branch" "$BRANCH_OVER" "$WANT_BRANCH_OVER"
+fi
+
+if $WANT_PULL_OVER; then
+    echo "Pulling overlay branch: $BRANCH_OVER"
+    gitover pull origin $BRANCH_OVER || true
 fi
 
 EXC_TMP_DIR=.tclb/tmp
@@ -159,10 +170,11 @@ if test -z "$URL_TCLB"; then
         esac
     fi
     gittclb remote add origin $URL_TCLB
+    WANT_PULL_TCLB=true
 else
     check_match "tclb" "remote" "$URL_TCLB" "$WANT_URL_TCLB"
 fi
-echo "Fetching: $URL_TCLB"
+echo "Fetching tclb origin: $URL_TCLB"
 gittclb fetch origin
 
 BRANCH_TCLB="$(gittclb branch --show-current 2>/dev/null || true)"
@@ -173,9 +185,14 @@ if test -z "$BRANCH_TCLB"; then
     else
         BRANCH_TCLB="master"
     fi
-    gittclb pull origin $BRANCH_TCLB
+    WANT_PULL_TCLB=true
 else
     check_match "tclb" "branch" "$BRANCH_TCLB" "$WANT_BRANCH_TCLB"
+fi
+
+if $WANT_PULL_TCLB; then
+    echo "Pulling tclb branch: $BRANCH_TCLB"
+    gittclb pull origin $BRANCH_TCLB
 fi
 
 echo "repos:"
